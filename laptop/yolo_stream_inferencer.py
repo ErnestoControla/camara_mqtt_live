@@ -40,6 +40,22 @@ class DetectionSummary:
         }
 
 
+def make_mqtt_client(client_id: str) -> mqtt.Client:
+    """Paho 2.x recomienda CallbackAPIVersion.VERSION2."""
+    try:
+        try:
+            from paho.mqtt.client import CallbackAPIVersion
+        except ImportError:
+            from paho.mqtt.enums import CallbackAPIVersion
+
+        return mqtt.Client(
+            client_id=client_id,
+            callback_api_version=CallbackAPIVersion.VERSION2,
+        )
+    except (TypeError, ImportError, AttributeError):
+        return mqtt.Client(client_id=client_id)
+
+
 def summary_from_results(r0: Any, names: Dict[int, str]) -> DetectionSummary:
     boxes = getattr(r0, "boxes", None)
     if boxes is None or boxes.cls is None or len(boxes.cls) == 0:
@@ -68,8 +84,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--imgsz",
         type=int,
-        default=None,
-        help="Tamano de inferencia (ej. 640). Por defecto el modelo.",
+        default=640,
+        help=(
+            "Tamano de inferencia (lado del cuadrado interno, ej. 640). "
+            "La camara VGA 640x480 se reescala con letterbox dentro de este tamano; "
+            "no hace falta que el frame sea 640x640."
+        ),
     )
     p.add_argument(
         "--stride",
@@ -106,7 +126,7 @@ def main() -> int:
 
     client: Optional[mqtt.Client] = None
     if not args.no_mqtt:
-        client = mqtt.Client(client_id="yolo_stream_inferencer")
+        client = make_mqtt_client("yolo_stream_inferencer")
         client.connect(args.mqtt_host, args.mqtt_port, keepalive=60)
         client.loop_start()
         print(f"[yolo-stream] MQTT -> {args.mqtt_topic} @ {args.mqtt_host}:{args.mqtt_port}")
@@ -156,7 +176,7 @@ def main() -> int:
                     source=frame,
                     conf=args.conf,
                     iou=args.iou,
-                    imgsz=args.imgsz,
+                    imgsz=int(args.imgsz),
                     verbose=False,
                 )
                 infer_count += 1

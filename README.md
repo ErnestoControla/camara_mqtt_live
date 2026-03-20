@@ -212,6 +212,8 @@ Script **`laptop/yolo_stream_inferencer.py`**:
 - Opcionalmente publica JSON en **`camara/detecciones`** (mismo esquema conceptual que `camara_nodered_mqtt`: `objects_total`, `classes`, `classes_unique`, más `source` y `ts_epoch_ms`).
 - **`--no-mqtt`** si solo quieres ver detecciones sin broker.
 
+**Resolución cámara vs YOLO:** la ESP32 entrega **VGA 640×480**. YOLOv8 no exige que el frame sea **640×640**; con `--imgsz 640` (valor por defecto) Ultralytics **reescala y hace letterbox** al tamaño de inferencia. No necesitas cambiar la cámara a cuadrado.
+
 #### Como ejecutar (Fase D)
 
 1. Broker MQTT en la laptop (si usas publicacion), por ejemplo el stack de `camara_nodered_mqtt`:
