@@ -148,10 +148,54 @@ Además conserva MQTT para publicar:
   - script Python (`cv2.imshow`) para prueba rápida.
 - Agregar métricas mínimas: FPS recibido, reconexión y registro de errores.
 
+#### Estado actual (implementado)
+
+Se implemento un visualizador local en:
+
+- `laptop/stream_viewer.py`
+- `laptop/requirements.txt`
+
+Capacidades incluidas:
+
+- Apertura de stream MJPEG de la ESP32 (`/stream`).
+- Ventana emergente con OpenCV (`cv2.imshow`).
+- Overlay de FPS en tiempo real.
+- Reconexion automatica si se cae el stream.
+- Guardado de snapshot con tecla `s` en carpeta `snapshots/`.
+- Cierre de app con tecla `q`.
+
+#### Como ejecutar el visualizador
+
+En esta laptop se usa el entorno **Anaconda** `sapera_django_yolo26`, que ya incluye **OpenCV** y lo necesario para **YOLO** en las fases siguientes. Activalo antes de ejecutar los scripts de `laptop/`:
+
+```bash
+conda activate sapera_django_yolo26
+cd /home/ernesto/Documentos/Proyectos/ESP32/camara_mqtt_live
+```
+
+Si en otro equipo no tuvieras OpenCV, puedes instalar lo minimo con `pip install -r laptop/requirements.txt` dentro de tu entorno.
+
+1. Ejecutar el visualizador contra la IP de la ESP32:
+   ```bash
+   python laptop/stream_viewer.py --url http://192.168.100.61/stream
+   ```
+
+2. Controles en la ventana:
+   - `q`: salir
+   - `s`: guardar snapshot
+
+#### Validacion de la fase
+
+- [x] Visualizacion en navegador (`http://<ip_esp32>/` y `/stream`).
+- [x] Visualizacion en ventana de escritorio (OpenCV).
+- [x] Metrica base de FPS.
+- [x] Reconexion automatica ante corte del stream.
+
 ### Fase D - Integración YOLO en vivo
 
 - Consumir stream y correr inferencia por frame (o cada N frames).
 - Dibujar detecciones en tiempo real.
+- Ejecutar en **`sapera_django_yolo26`** (entorno Conda con OpenCV/Ultralytics en esta laptop).
 - Ajustar balance precisión/rendimiento:
   - modelo YOLO (nano/small),
   - resolución de inferencia,
@@ -168,6 +212,7 @@ Además conserva MQTT para publicar:
 - La laptop y la ESP32 estarán en la misma red local.
 - Se mantiene MQTT para señalización/estado, incluso si el video viaja por otro canal.
 - El primer objetivo es **funcionalidad estable**, luego optimización de latencia y calidad.
+- Scripts de laptop (visualizador, YOLO en vivo): usar **`conda activate sapera_django_yolo26`** (OpenCV + Ultralytics/YOLO ya disponibles en tu entorno).
 
 ## Riesgos técnicos a vigilar
 
@@ -187,4 +232,4 @@ Además conserva MQTT para publicar:
 
 ## Próximo paso
 
-Con la Fase A definida, el siguiente paso es implementar la **Fase B**: clonar el firmware base de `camara_nodered_mqtt`, mantener su configuración de cámara/red y reemplazar el envío por POST por un servidor HTTP con endpoint `/stream`.
+Implementar la **Fase D**: pipeline de inferencia YOLO sobre el stream MJPEG (`conda activate sapera_django_yolo26`).
