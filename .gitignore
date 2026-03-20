@@ -1,0 +1,48 @@
+# =========================
+# Sistema operativo / IDE
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# =========================
+# Python (si agregamos scripts YOLO)
+# =========================
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# =========================
+# ESP-IDF / compilacion
+# =========================
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/dependencies.lock
+firmware/managed_components/
+firmware/.idf_component_manager/
+
+# =========================
+# Secretos / configuracion sensible
+# =========================
+.env
+.env.*
+*.pem
+*.key
+*.crt
+credentials.json
+secrets.json
+
+# =========================
+# Imagenes/capturas generadas
+# =========================
+capturas/
+inferencias/
+snapshots/
+output/
+*.jpg
+*.jpeg
+*.png

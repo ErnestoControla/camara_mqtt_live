@@ -1,0 +1,27 @@
+menu "camara_mqtt_live"
+
+    config ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "Mega-2.4G-D6AF"
+
+    config ESP_WIFI_PASSWORD
+        string "Contrasena WiFi"
+        default ""
+
+    config SERVER_IP
+        string "IP del servidor MQTT (Laptop)"
+        default "192.168.100.13"
+
+    config ESP_MAXIMUM_RETRY
+        int "Reintentos WiFi"
+        default 5
+
+    config WIFI_USE_ALT_MAC
+        bool "Usar MAC aleatoria cada arranque"
+        default n
+
+    config WIFI_FORCE_WPA2
+        bool "Forzar asociacion WPA2"
+        default n
+
+endmenu
