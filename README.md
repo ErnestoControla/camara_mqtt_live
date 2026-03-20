@@ -1,6 +1,8 @@
 # camara_mqtt_live
 
-Proyecto base para evolucionar desde `camara_nodered_mqtt` hacia **video en streaming** con ESP32-CAM, manteniendo la integración de red/mensajería y preparando la segunda etapa de inferencia con YOLO en la laptop.
+Proyecto **MVP v1 (cerrado)**: streaming **MJPEG VGA** desde ESP32-CAM, visualización en laptop e **inferencia YOLO en vivo** con MQTT opcional. Evoluciona la idea de `camara_nodered_mqtt` (foto por disparo) hacia **video continuo**.
+
+Documentación de cierre ampliada: [`docs/fase-e-cierre.md`](docs/fase-e-cierre.md).
 
 ## Objetivo general
 
@@ -150,7 +152,7 @@ Además conserva MQTT para publicar:
 
 #### Estado actual (implementado)
 
-Se implemento un visualizador local en:
+Se implementó un visualizador local en:
 
 - `laptop/stream_viewer.py`
 - `laptop/requirements.txt`
@@ -248,9 +250,50 @@ Script **`laptop/yolo_stream_inferencer.py`**:
 
 ### Fase E - Endurecimiento y documentación final
 
-- Pruebas de estabilidad (duración, reconexión WiFi, reinicio de servicios).
-- Ajustes de rendimiento.
-- Documentar arquitectura final, comandos y troubleshooting.
+#### Objetivo
+
+Cerrar el ciclo **A→E** con pruebas recomendadas, límites conocidos y una referencia rápida de operación y troubleshooting.
+
+#### Estado (cerrado v1)
+
+- [x] Arquitectura y firmware de streaming validados en hardware (OV3660 / VGA).
+- [x] Visualización navegador + `stream_viewer.py`.
+- [x] `yolo_stream_inferencer.py` con `--imgsz` por defecto compatible con Ultralytics reciente.
+- [x] Documentación de **un solo cliente** en `/stream` y nota VGA vs letterbox YOLO.
+- [x] Anexo formal: **`docs/fase-e-cierre.md`**.
+
+#### Protocolo de prueba de estabilidad (recomendado)
+
+1. Una sola pestaña/app consumiendo `http://<ip_esp32>/stream`.
+2. Correr **10–15 minutos** `stream_viewer.py` o el navegador: sin reinicios inesperados de la ESP32.
+3. Con Mosquitto en marcha, correr `yolo_stream_inferencer.py` el mismo tiempo: revisar FPS en overlay y que MQTT no sature (ajustar `--mqtt-min-interval` si hace falta).
+4. Opcional: cortar WiFi unos segundos y comprobar reconexión del script (reintento) y de la ESP32 (monitor serie / `camara/ip`).
+
+#### Afinado rápido (sin recompilar firmware)
+
+| Objetivo | Acción |
+|----------|--------|
+| Menos carga en laptop | `--stride 3` o más; `--imgsz 320` |
+| Menos tráfico WiFi / más FPS en ESP32 | En firmware: subir `jpeg_quality` (número más alto = más compresión) o aumentar el delay entre frames en el handler del stream |
+| Solo ver video | Navegador o `stream_viewer.py` |
+| Detecciones + MQTT | `yolo_stream_inferencer.py` (broker en `127.0.0.1:1883` o `--mqtt-host`) |
+
+#### Troubleshooting consolidado
+
+| Síntoma | Causa probable | Qué hacer |
+|---------|----------------|-----------|
+| `404` o "Nothing matches URI" en `http://ip/` | Firmware antiguo sin `GET /` | Actualizar firmware; o usar `/stream` directamente |
+| OpenCV timeout ~30 s al abrir stream | Otra pestaña con `/stream` abierta | Cerrar navegador u otra app que use el mismo stream |
+| `TypeError imgsz=None` (YOLO) | Versión Ultralytics estricta | Usar repo actual: `--imgsz` por defecto 640 |
+| `DeprecationWarning` MQTT Callback API | Paho 2.x | Repo actual usa API v2 cuando está disponible |
+| Aviso Wayland / Gnome | OpenCV/Qt | Inofensivo; opcional: `export QT_QPA_PLATFORM=wayland` |
+| `FB-OVF` en monitor (poco frecuente) | Buffers cámara vs consumo | Firmware usa `GRAB_WHEN_EMPTY` y `fb_count=1`; evitar muchos clientes |
+
+#### Límites conocidos (v1)
+
+- **Concurrencia:** la ESP32-CAM no escala como un servidor de video profesional; tratar como **un cliente de stream a la vez** para uso fiable.
+- **Rendimiento YOLO:** limitado por CPU/GPU de la laptop; el FPS del overlay "infer" puede ser menor que el FPS del video MJPEG.
+- **Seguridad:** HTTP sin TLS en LAN; no exponer el puerto 80 de la ESP32 a Internet sin reverse proxy y autenticación.
 
 ## Supuestos y decisiones iniciales
 
@@ -266,15 +309,20 @@ Script **`laptop/yolo_stream_inferencer.py`**:
 - Aumento de latencia por serialización JPEG y transporte.
 - Cortes de WiFi en sesiones largas.
 
-## Backlog inicial (orden sugerido)
+## Historial del plan (A–E) — estado
 
-1. Definir arquitectura de streaming para MVP.
-2. Crear firmware mínimo que emita stream VGA continuo.
-3. Confirmar visualización en laptop (navegador o ventana).
-4. Medir rendimiento base (FPS/latencia/estabilidad).
-5. Integrar YOLO sobre stream.
-6. Publicar resultados y métricas por MQTT.
+| # | Entrega | Estado |
+|---|---------|--------|
+| A | Arquitectura MJPEG + MQTT estado | Hecho |
+| B | Firmware `/`, `/stream`, `/snapshot`, `/health` | Hecho |
+| C | `stream_viewer.py` | Hecho |
+| D | `yolo_stream_inferencer.py` + MQTT detecciones | Hecho |
+| E | Documentación de cierre y límites | Hecho (`README` + `docs/fase-e-cierre.md`) |
 
-## Próximo paso
+## Próximas mejoras (fuera de v1)
 
-**Fase E**: pruebas de estabilidad largas, afinado de `stride`/calidad JPEG en firmware y documentacion final de limites de rendimiento.
+Ideas opcionales: proxy en laptop para varios visores, control MQTT del stream, calidad JPEG dinámica, otro modelo YOLO o despliegue con GPU dedicada, hardening de red.
+
+---
+
+**Proyecto MVP v1:** cerrado a nivel documentación y alcance acordado. Para reproducir: seguir secciones Fase B (firmware), Fase C (visualizador) y Fase D (YOLO); detalles de cierre en **`docs/fase-e-cierre.md`**.
