@@ -37,6 +37,13 @@ credentials.json
 secrets.json
 
 # =========================
+# Pesos de modelos (YOLO, etc.)
+# =========================
+*.pt
+*.onnx
+*.engine
+
+# =========================
 # Imagenes/capturas generadas
 # =========================
 capturas/
