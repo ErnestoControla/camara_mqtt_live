@@ -201,6 +201,49 @@ Si en otro equipo no tuvieras OpenCV, puedes instalar lo minimo con `pip install
   - resolución de inferencia,
   - frecuencia de procesamiento.
 
+#### Estado actual (implementado)
+
+Script **`laptop/yolo_stream_inferencer.py`**:
+
+- Abre el stream MJPEG (`--url`, por defecto debe coincidir con la IP de la ESP32).
+- Ejecuta **Ultralytics YOLO** cada `--stride` frames (por defecto 2) para no saturar CPU/GPU.
+- Muestra ventana con cajas (`results.plot()`).
+- Superpone FPS de video y FPS de inferencia.
+- Opcionalmente publica JSON en **`camara/detecciones`** (mismo esquema conceptual que `camara_nodered_mqtt`: `objects_total`, `classes`, `classes_unique`, más `source` y `ts_epoch_ms`).
+- **`--no-mqtt`** si solo quieres ver detecciones sin broker.
+
+#### Como ejecutar (Fase D)
+
+1. Broker MQTT en la laptop (si usas publicacion), por ejemplo el stack de `camara_nodered_mqtt`:
+   ```bash
+   cd /home/ernesto/Documentos/Proyectos/ESP32/camara_nodered_mqtt
+   docker compose up -d
+   ```
+
+2. **Cierra el navegador** si tenias abierto el stream de la ESP32 (un cliente a la vez).
+
+3. Ejecutar inferencia en vivo:
+   ```bash
+   conda activate sapera_django_yolo26
+   cd /home/ernesto/Documentos/Proyectos/ESP32/camara_mqtt_live
+   python laptop/yolo_stream_inferencer.py --url http://192.168.100.63/stream
+   ```
+
+   Variantes utiles:
+   ```bash
+   # Mas ligero (inferir 1 de cada 3 frames)
+   python laptop/yolo_stream_inferencer.py --url http://<ip_esp32>/stream --stride 3
+
+   # Sin MQTT, solo ventana con detecciones
+   python laptop/yolo_stream_inferencer.py --url http://<ip_esp32>/stream --no-mqtt
+   ```
+
+4. Suscribirse a detecciones (opcional):
+   ```bash
+   docker compose exec mosquitto mosquitto_sub -h localhost -t "camara/detecciones" -v
+   ```
+   (desde el directorio donde tengas Mosquitto en marcha).
+
 ### Fase E - Endurecimiento y documentación final
 
 - Pruebas de estabilidad (duración, reconexión WiFi, reinicio de servicios).
@@ -232,4 +275,4 @@ Si en otro equipo no tuvieras OpenCV, puedes instalar lo minimo con `pip install
 
 ## Próximo paso
 
-Implementar la **Fase D**: pipeline de inferencia YOLO sobre el stream MJPEG (`conda activate sapera_django_yolo26`).
+**Fase E**: pruebas de estabilidad largas, afinado de `stride`/calidad JPEG en firmware y documentacion final de limites de rendimiento.
